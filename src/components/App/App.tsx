@@ -13,32 +13,21 @@ import css from "./App.module.css";
 
 function App() {
   const [movieName, setMovieName] = useState("");
-  const [movies, setMovies] = useState<Movie[]>([]);
-
   const [page, setPage] = useState(1);
 
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [isModalShown, setIsModalShown] = useState(false);
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, isSuccess, isFetching } = useQuery({
     queryKey: ["movies", movieName, page],
     queryFn: () => fetchMovies(movieName, page),
     enabled: movieName !== "",
     placeholderData: keepPreviousData,
   });
 
-  useEffect(() => {
-    if (data && data.results.length > 0) {
-      setMovies(data.results);
-    } else if (data && data.results.length === 0) {
-      toast.error("No movies found for your request.");
-    }
-  }, [data]);
-
   function onSubmit(query: string) {
-    setMovies([]);
     setMovieName(query);
-    setPage(1); 
+    setPage(1);
   }
 
   const handleMovieSelection = (movie: Movie) => {
@@ -50,6 +39,14 @@ function App() {
     setIsModalShown(false);
     setSelectedMovie(null);
   };
+
+  useEffect(() => {
+    if (isSuccess && data?.results.length === 0) {
+      toast.error("No movies found for your request.");
+    }
+  }, [isSuccess, data])
+
+  const movies = data?.results ?? [];
 
   return (
     <>
@@ -67,7 +64,7 @@ function App() {
           previousLabel="←"
         />
       )}
-      {movies.length > 0 && (
+      {!isFetching && movies.length > 0 && (
         <MovieGrid movies={movies} onSelect={handleMovieSelection} />
       )}
       {isLoading && <Loader />}
